@@ -179,3 +179,25 @@ elements.rangeEstrobo.oninput = () => {
 
 renderizar();
 elements.selectEfeito.value = "nenhum";
+
+// --- LÓGICA DO PROMPT DE INSTALAÇÃO ---
+function verificarInstalacao() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    // Verifica se o app já está rodando como "instalado" (Standalone)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+    if (!isStandalone && (isIOS || isAndroid)) {
+        const prompt = get('#pwa-install-prompt');
+        prompt.classList.remove('escondido');
+        
+        if (isIOS) get('#instrucao-ios').classList.remove('escondido');
+        else if (isAndroid) get('#instrucao-android').classList.remove('escondido');
+        
+        get('#btnFecharPrompt').onclick = () => prompt.classList.add('escondido');
+    }
+}
+
+// Chama a verificação ao carregar
+verificarInstalacao();

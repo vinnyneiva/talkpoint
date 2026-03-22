@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <link rel="icon" type="image/png" href="public/icon.png" />
+  <link rel="icon" type="image/png" href="public/icon_preto.png" />
   <link rel="apple-touch-icon" href="public/icon_preto.png">
   <title>TalkPoint</title>
   <style>
@@ -136,6 +136,19 @@
 
     input[type="range"] { width: 100%; accent-color: #00ffcc; margin-top: 8px; }
     select, input[type="color"] { background: #000; color: #00ffcc; border: 1px solid #333; padding: 5px; border-radius: 5px; }
+
+    #pwa-install-prompt {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      width: 90%; max-width: 400px; background: #1a1a1a; border: 1px solid #00ffcc;
+      border-radius: 15px; padding: 20px; z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+    .prompt-content { color: #fff; font-size: 0.9rem; line-height: 1.5; text-align: center; }
+    .prompt-content p { font-weight: bold; color: #00ffcc; margin-bottom: 10px; }
+    #btnFecharPrompt { 
+      margin-top: 15px; background: #00ffcc; color: #000; border: none; 
+      padding: 8px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;
+    }
+
   </style>
 </head>
 <body>
@@ -245,5 +258,20 @@
   </div>
 
   <script type="module" src="./main.js"></script>
+
+  <div id="pwa-install-prompt" class="escondido">
+    <div class="prompt-content">
+      <p>Para usar como App no seu telemóvel:</p>
+      <div id="instrucao-ios" class="escondido">
+        1. Toque no ícone de <strong>Compartilhar</strong> <span style="font-size:1.2rem">⎋</span> embaixo.<br>
+        2. Role e escolha <strong>"Adicionar à Tela de Início"</strong>.
+      </div>
+      <div id="instrucao-android" class="escondido">
+        1. Toque nos <strong>três pontinhos ⋮</strong> no canto superior.<br>
+        2. Escolha <strong>"Instalar aplicativo"</strong> ou "Adicionar à tela inicial".
+      </div>
+      <button id="btnFecharPrompt">ENTENDI</button>
+    </div>
+  </div>
 </body>
 </html>

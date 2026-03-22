@@ -12,10 +12,25 @@
   </style>
 </head>
 <body>
-  <div id="display">DIGITE ALGO</div>
-  <input type="text" id="texto" placeholder="O que você quer dizer?">
-  <br>
-  <button id="btnFalar">FALAR E MOSTRAR</button>
+  <div id="display">TALKPOINT</div>
+
+  <div class="controls">
+  <input type="text" id="texto" placeholder="O que você quer dizer?" autocomplete="off">
+  
+  <div style="margin: 10px 0; color: #00ffcc; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
+    <label>
+      <input type="checkbox" id="checkVoz" checked> Ativar Voz
+    </label>
+  </div>
+
+  <div style="display: flex; gap: 10px; width: 100%;">
+    <button id="btnFalar" style="flex: 2;">MOSTRAR / FALAR</button>
+    <button id="btnSalvar" style="flex: 1; background: #333; color: #00ffcc; border: 1px solid #00ffcc;">SALVAR</button>
+  </div>
+</div>
+
+  <div id="favoritos" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 30px; justify-content: center; width: 90%;">
+    </div>
 
   <script type="module" src="./main.js"></script>
 </body>

@@ -5,16 +5,51 @@ const display = document.querySelector('#display');
 const containerFavoritos = document.querySelector('#favoritos');
 const checkVoz = document.querySelector('#checkVoz');
 
-// 1. Carrega frases do celular ou usa as iniciais se for a primeira vez
+// Menu Lateral
+const sidebar = document.querySelector('#sidebar');
+const btnMenu = document.querySelector('#btnMenu');
+const btnClose = document.querySelector('#btnClose');
+
+// 1. Carrega frases
 let meusFavoritos = JSON.parse(localStorage.getItem('talkpoint_frases')) || ["Sim", "Não", "Obrigado", "Banheiro", "Água", "Ajuda"];
 
-// 2. Função de Voz
+// --- FUNÇÕES DO MENU (Ajustadas) ---
+
+const fecharMenu = () => {
+  sidebar.style.left = '-300px';
+  btnMenu.style.left = '20px';
+  btnMenu.innerText = '☰ Frases';
+  btnMenu.style.color = '#00ffcc';
+  btnMenu.style.borderColor = '#00ffcc';
+};
+
+// ESSA É A ÚNICA FUNÇÃO QUE O BTNMENU DEVE TER
+btnMenu.addEventListener('click', () => {
+  // Se estiver fechado (ou vazio no início), ABRE
+  if (sidebar.style.left === '-300px' || sidebar.style.left === '') {
+    sidebar.style.left = '0px';
+    btnMenu.style.left = '325px'; 
+    btnMenu.innerText = '✕';
+    btnMenu.style.color = '#ff5555';
+    btnMenu.style.borderColor = '#ff5555';
+  } else {
+    // Se estiver aberto, FECHA
+    fecharMenu();
+  }
+});
+
+btnClose.addEventListener('click', fecharMenu);
+
+// Fecha ao clicar no letreiro
+display.addEventListener('click', () => {
+  if (sidebar.style.left === '0px') fecharMenu();
+});
+
+// --- RESTO DO CÓDIGO (Voz, Renderização, Salvar) ---
+
 function falar(texto) {
   if (texto !== "") {
-    // 1. SEMPRE mostra na tela (o letreiro)
     display.innerText = texto;
-
-    // 2. SÓ fala se a caixinha estiver marcada
     if (checkVoz.checked) {
       const fala = new SpeechSynthesisUtterance(texto);
       const vozes = window.speechSynthesis.getVoices();
@@ -26,51 +61,42 @@ function falar(texto) {
   }
 }
 
-// 3. Função para desenhar os botões na tela
 function renderizarBotoes() {
   containerFavoritos.innerHTML = ''; 
-  
   meusFavoritos.forEach((frase, index) => {
     const btnFrase = document.createElement('button');
     btnFrase.innerText = frase;
-    btnFrase.style.padding = '10px 15px';
-    btnFrase.style.fontSize = '1rem';
-    btnFrase.style.background = '#111';
+    btnFrase.className = 'btn-favorito'; // Dica: use classes para CSS se quiser
+    btnFrase.style.textAlign = 'left';
+    btnFrase.style.padding = '12px';
+    btnFrase.style.background = '#222';
     btnFrase.style.color = '#00ffcc';
     btnFrase.style.border = '1px solid #333';
-    btnFrase.style.borderRadius = '8px';
+    btnFrase.style.borderRadius = '5px';
     btnFrase.style.cursor = 'pointer';
 
-    // Variável para controlar o tempo entre cliques
     let clickTimer;
-
     btnFrase.addEventListener('click', () => {
       if (clickTimer) {
-        // Se houver um timer rodando, significa que é o segundo clique
         clearTimeout(clickTimer);
         clickTimer = null;
-
-        // Ação de APAGAR
-        if (confirm(`Deseja apagar o botão "${frase}"?`)) {
+        if (confirm(`Apagar "${frase}"?`)) {
           meusFavoritos.splice(index, 1);
           localStorage.setItem('talkpoint_frases', JSON.stringify(meusFavoritos));
           renderizarBotoes();
         }
       } else {
-        // Primeiro clique: inicia o timer
         clickTimer = setTimeout(() => {
-          // Se o tempo passar sem o segundo clique, ele FALA
           falar(frase);
+          fecharMenu(); 
           clickTimer = null;
-        }, 250); // 250ms é o tempo ideal para distinguir clique de clique duplo
+        }, 250);
       }
     });
-
     containerFavoritos.appendChild(btnFrase);
   });
 }
 
-// 4. Salvar nova frase personalizada
 btnSalvar.addEventListener('click', () => {
   const novaFrase = input.value.trim();
   if (novaFrase && !meusFavoritos.includes(novaFrase)) {
@@ -81,7 +107,6 @@ btnSalvar.addEventListener('click', () => {
   }
 });
 
-// 5. Botão de fala manual
 btnFalar.addEventListener('click', () => {
   if (input.value.trim() !== "") {
     falar(input.value);
@@ -89,6 +114,5 @@ btnFalar.addEventListener('click', () => {
   }
 });
 
-// Inicialização
 renderizarBotoes();
 window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();

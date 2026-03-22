@@ -14,10 +14,15 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: 'https://cdn-icons-png.flaticon.com/512/709/709612.png',
-            sizes: '512x512',
+            src: 'icon.png',
+            sizes: '192x192',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any maskable' // Isso diz ao celular que o ícone pode ser ajustado
+          },
+          {
+            src: 'icon.png',
+            sizes: '512x512',
+            type: 'image/png'
           }
         ]
       }

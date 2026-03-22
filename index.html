@@ -2,42 +2,245 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" type="image/png" href="/icon.png" />
   <link rel="apple-touch-icon" href="/icon.png">
   <title>TalkPoint</title>
   <style>
-    body { background: #000; color: #fff; font-family: sans-serif; text-align: center; }
-    #display { font-size: 5rem; font-weight: bold; text-transform: uppercase; margin: 50px 0; min-height: 150px; color: #00ffcc; text-shadow: 0 0 10px #00ffcc; }
-    input { padding: 15px; width: 80%; font-size: 1.2rem; border-radius: 8px; border: none; }
-    button { padding: 15px 30px; font-size: 1.2rem; margin-top: 20px; cursor: pointer; background: #00ffcc; border: none; font-weight: bold; border-radius: 8px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+
+    header { position: fixed; top: 0; left: 0; width: 100%; height: 60px; background: #000; border-bottom: 1px solid #111; display: flex; align-items: center; justify-content: center; z-index: 100; }
+    #app { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 80px 20px 20px; }
+    #display { font-size: clamp(1.5rem, 8vw, 3rem); font-weight: bold; text-transform: uppercase; margin-bottom: 30px; min-height: 100px; color: #fff; text-align: center; width: 100%; }
+    
+    .controls { width: 100%; max-width: 500px; z-index: 10; }
+    input[type="text"] { padding: 18px; width: 100%; font-size: 1.2rem; border-radius: 12px; border: 2px solid #222; background: #111; color: #fff; outline: none; }
+
+    /* BOTÃO CONFIG FLUTUANTE */
+    #btnAbrirConfig {
+      position: fixed; bottom: 25px; right: 25px;
+      width: 60px; height: 60px; background: #1a1a1a;
+      border: 1px solid #333; border-radius: 50%;
+      color: #666; font-size: 1.8rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+
+    /* SIDEBAR */
+    #sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100%; background: #0a0a0a; border-right: 1px solid #222; transition: 0.4s; z-index: 2000; padding: 25px; overflow-y: auto; }
+
+    /* OVERLAY LETREIRO */
+    #letreiro-overlay { 
+      position: fixed; 
+      top: 0; left: 0; 
+      width: 100vw; height: 100vh; 
+      z-index: 9999; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      overflow: hidden;
+      visibility: hidden; /* Importante: Começa invisível */
+      pointer-events: none; /* Não bloqueia cliques quando invisível */
+    }
+    .escondido { display: none !important; }
+    
+    #letreiro-overlay:not(.escondido) {
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    #letreiro-texto { 
+      white-space: nowrap; 
+      display: inline-block; 
+      font-size: 35vh; 
+      font-weight: 900; 
+      text-transform: uppercase; 
+      cursor: pointer;
+    }
+
+    /* ANIMAÇÃO DE ROLAR */
+    .animar-rolar { animation: rolarLetreiro linear infinite; }
+    @keyframes rolarLetreiro { 
+        from { transform: translateX(100vw); } 
+        to { transform: translateX(-100%); } 
+    }
+
+    /* MODO GIGANTE ESTÁTICO */
+    .modo-estatico { white-space: normal !important; text-align: center; width: 95vw; font-size: clamp(3rem, 18vw, 40vh) !important; transform: none !important; }
+
+    /* EFEITOS ADICIONAIS */
+    /* Define as variáveis de cor dinâmicas que o JS vai preencher */
+    :root {
+      --cor-letra-strobo: #00ffcc; /* Padrão inicial */
+      --cor-fundo-strobo: #000000; /* Padrão inicial */
+    }
+    .efeito-piscar {
+      /* Animação ultra rápida, alterna instantaneamente, infinita */
+      /* Agora o tempo de animação vem da variável --tempo-estrobo */
+      animation: estrobo-anim var(--tempo-estrobo, 0.1s) steps(1) infinite !important;
+    }
+    /* Se estiver correndo E piscando, combinamos as animações */
+    .animar-rolar.efeito-piscar {
+      animation: rolarLetreiro linear infinite, estrobo-anim var(--tempo-estrobo, 0.1s) steps(1) infinite !important;
+    }
+    .modo-estatico.efeito-piscar { animation: piscar-anim 2s infinite alternate !important; }
+    @keyframes piscar-anim { from { opacity: 1; } to { opacity: 0.1; } }
+    @keyframes estrobo-anim {
+      0%, 100% {
+        /* Estado Normal: Usa as cores escolhidas no config */
+        color: var(--cor-letra-strobo);
+        background-color: var(--cor-fundo-strobo);
+      }
+      50% {
+        /* Estado Invertido: Troca a cor da letra com a do fundo */
+        color: var(--cor-fundo-strobo);
+        background-color: var(--cor-letra-strobo);
+      }
+    }
+    .efeito-neon { text-shadow: 0 0 20px currentColor, 0 0 50px currentColor !important; }
+
+    /* BOTTOM SHEET */
+    #config-sheet { 
+      position: fixed; 
+      bottom: -100%; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      background: rgba(0,0,0,0.8); 
+      z-index: 3000; 
+      transition: bottom 0.4s ease, visibility 0.4s; /* Adicionado visibility */
+      display: flex; 
+      align-items: flex-end; 
+      pointer-events: none; 
+      visibility: hidden; /* Começa invisível para não bloquear cliques */
+    }
+    .sheet-open { 
+      bottom: 0 !important; 
+      pointer-events: auto !important; 
+      visibility: visible !important; /* Fica visível e clicável */
+    }
+    .sheet-content { width: 100%; background: #111; border-top: 1px solid #333; border-radius: 25px 25px 0 0; padding: 20px 30px 40px; max-height: 85vh; overflow-y: auto; }
+    .sheet-bar { width: 40px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto 20px; }
+    .config-item { padding: 12px 0; border-bottom: 1px solid #222; }
+    .config-row { display: flex; justify-content: space-between; align-items: center; }
+    
+    .sheet-bar { 
+        width: 50px; /* Um pouco maior */
+        height: 6px; 
+        background: #444; /* Um pouco mais clara */
+        border-radius: 10px; 
+        margin: 0 auto 20px; 
+        cursor: grab; /* Indica que pode puxar */
+}
+
+    input[type="range"] { width: 100%; accent-color: #00ffcc; margin-top: 8px; }
+    select, input[type="color"] { background: #000; color: #00ffcc; border: 1px solid #333; padding: 5px; border-radius: 5px; }
   </style>
 </head>
 <body>
-  <button id="btnMenu" style="position: fixed; top: 20px; left: 20px; z-index: 1001; background: none; border: 1px solid #00ffcc; color: #00ffcc; padding: 10px; border-radius: 5px; transition: 0.3s; min-width: 45px;">☰ Frases</button>
 
-  <nav id="sidebar" style="position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: #111; border-right: 2px solid #00ffcc; transition: 0.3s; z-index: 1000; padding: 20px; overflow-y: auto;">
-    <h3 style="color: #00ffcc; margin-top: 60px;">MEUS FAVORITOS</h3>
-    <p style="color: #666; font-size: 0.8rem; margin-bottom: 20px;">Dê 2 cliques para apagar</p>
-    
-    <div id="favoritos" style="display: flex; flex-direction: column; gap: 10px;">
-      </div>
-    
-    <button id="btnClose" style="margin-top: 30px; width: 100%; background: #222; color: #ff5555; border: 1px solid #ff5555;">FECHAR MENU</button>
+  <header>
+    <button id="btnMenu" style="position: absolute; left: 15px; background: none; border: 1px solid #222; color: #666; padding: 8px 15px; border-radius: 6px; cursor: pointer;">☰ Listas</button>
+    <h1 style="color: #00ffcc; font-size: 1rem; letter-spacing: 2px;">TALKPOINT</h1>
+  </header>
+
+  <nav id="sidebar">
+    <h2 style="color: #00ffcc; margin: 40px 0 20px; font-size: 1rem;">LISTAS</h2>
+    <div id="favoritos"></div>
+    <button id="btnClose" style="margin-top: 20px; width: 100%; padding: 12px; background: none; border: 1px solid #333; color: #ff5555; border-radius: 8px; cursor: pointer;">FECHAR</button>
   </nav>
 
-  <div id="display">TALKPOINT</div>
+  <div id="letreiro-overlay" class="escondido">
+    <button id="btnFecharLetreiro" style="position: absolute; top: 20px; right: 20px; padding: 12px 25px; border-radius: 30px; background: #222; color: #fff; border: 1px solid #444; cursor: pointer; z-index: 10001;">✕ FECHAR</button>
+    <span id="letreiro-texto"></span>
+  </div>
 
-  <div class="controls">
-    <input type="text" id="texto" placeholder="O que você quer dizer?" autocomplete="off">
-    
-    <div style="margin: 10px 0; color: #00ffcc; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
-      <label><input type="checkbox" id="checkVoz" checked> Ativar Voz</label>
+  <main id="app">
+    <div id="display">(AGUARDANDO TEXTO...)</div>
+    <div class="controls">
+      <input type="text" id="texto" placeholder="Digite aqui..." autocomplete="off">
+      <button id="btnLimpar" style="width: 100%; background: none; border: none; color: #444; padding: 15px; font-size: 0.8rem; cursor: pointer;">✕ LIMPAR TEXTO</button>
+      <div style="display: flex; gap: 10px;">
+        <button id="btnFalar" style="flex: 2; padding: 20px; border-radius: 12px; background: #00ffcc; font-weight: bold; border: none; cursor: pointer; color: #000;">MOSTRAR / FALAR</button>
+        <button id="btnSalvar" style="flex: 1; padding: 20px; border-radius: 12px; background: #1a1a1a; color: #00ffcc; border: 1px solid #00ffcc; cursor: pointer;">SALVAR</button>
+      </div>
     </div>
+  </main>
 
-    <div style="display: flex; gap: 10px; width: 100%;">
-      <button id="btnFalar" style="flex: 2;">MOSTRAR / FALAR</button>
-      <button id="btnSalvar" style="flex: 1; background: #333; color: #00ffcc; border: 1px solid #00ffcc;">SALVAR</button>
+  <button id="btnAbrirConfig">⚙️</button>
+
+  <div id="config-sheet">
+    <div class="sheet-content">
+      <div class="sheet-bar"></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="color: #00ffcc;">Ajustes</h3>
+        <button id="btnReset" style="background: none; border: 1px solid #444; color: #ff5555; padding: 5px 10px; border-radius: 5px; font-size: 0.7rem; cursor: pointer;">RESETAR</button>
+      </div>
+
+      <div class="config-item">
+        <div class="config-row"><span>Cor da Letra</span><input type="color" id="corTexto" value="#00ffcc"></div>
+        <div class="config-row" style="margin-top: 10px;"><span>Cor do Fundo</span><input type="color" id="corFundo" value="#000000"></div>
+      </div>
+
+      <div class="config-item">
+        <div class="config-row">
+            <span>Fonte</span>
+            <select id="selectFonte">
+                <option value="sans-serif">Padrão</option>
+                <option value="monospace">Máquina</option>
+                <option value="Impact">Impacto</option>
+                <option value="serif">Clássica</option>
+            </select>
+        </div>
+      </div>
+
+      <div class="config-item">
+        <div class="config-row">
+            <span>Modo</span>
+            <select id="selectModo">
+                <option value="rolar">Letreiro (Corre)</option>
+                <option value="estatico">Gigante (Parado)</option>
+                <option value="padrao">Discreto (Display)</option>
+            </select>
+        </div>
+      </div>
+
+      <div class="config-item">
+        <div class="config-row">
+            <span>Efeito</span>
+            <select id="selectEfeito">
+                <option value="nenhum">Nenhum</option>
+                <option value="piscar">Piscar</option>
+                <option value="neon">Neon</option>
+            </select>
+        </div>
+      </div>
+
+      <div class="config-item">
+        <div class="config-row"><span>Velocidade Letreiro</span><span id="valVelLetreiro">1.0x</span></div>
+        <input type="range" id="rangeVelLetreiro" min="0.5" max="4" step="0.1" value="1">
+      </div>
+
+      <div class="config-item">
+        <div class="config-row"><span>Velocidade Voz</span><span id="valVelVoz">1.0x</span></div>
+        <input type="range" id="rangeVelVoz" min="0.5" max="2" step="0.1" value="1">
+      </div>
+      
+      <div class="config-item">
+        <div class="config-row">
+          <span>Velocidade Estrobo</span>
+          <span id="valVelEstrobo">Média</span>
+        </div>
+        <input type="range" id="rangeVelEstrobo" min="0.05" max="0.5" step="0.05" value="0.4" style="direction: rtl;">
+      </div>
+
+      <div class="config-item" style="display: flex; justify-content: space-between;">
+        <span>Ativar Voz</span>
+        <input type="checkbox" id="checkVoz" >
+      </div>
+
+      <button id="btnFecharConfig" style="width: 100%; margin-top: 20px; padding: 15px; border-radius: 12px; background: #00ffcc; color: #000; border: none; font-weight: bold; cursor: pointer;">CONCLUIR</button>
     </div>
   </div>
 
